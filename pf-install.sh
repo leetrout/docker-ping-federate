@@ -1,5 +1,5 @@
 #!/bin/bash
-PFVERSION=9.1.3
+PFVERSION=9.2.1
 PF_SIZE_REQ=1024 
 PF_TMP_SIZE_REQ=200
 TMP_DIR=/tmp/ping-tmp/
@@ -165,47 +165,51 @@ function checkSELinux()
 
 # Mode selection
 function mode_selection () {
-echo "Please choose which mode you'd like PingFederate to operate in."
-PS3='Please enter your choice: '
-options=("Standalone" "Clustered Admin Node" "Clustered Runtime Node" "Quit Installer")
-select opt in "${options[@]}"
-do
-    case $opt in
-        "Standalone")
-	    pfmode="STANDALONE"
-	    pfmodetxt="Standalone"
-	    pfmodetxt2="Standalone mode"
-	    pfmodetxt3="This will be your only PingFederate node that will operate independently."
-	    break
-            ;;
-        "Clustered Admin Node")
-            pfmode="CLUSTERED_CONSOLE"
-	    pfmodetxt="Clustered Admin Node"
-	    pfmodetxt2="Clustered Admin mode"
-	    pfmodetxt3="This will be one of several nodes in a cluster that will host the admin console. Only one node in the cluster can operate the admin console."
-            break
-            ;;
-        "Clustered Runtime Node")
-            pfmode="CLUSTERED_ENGINE"
-	    pfmodetxt="Clustered Runtime Node"
-	    pfmodetxt2="Clustered Runtime mode"
-	    pfmodetxt3="This will be one of several nodes in a cluster that will not host the admin console."
-            break
-            ;;
-        "Quit Installer")
-            exit 0
-            ;;
-        *) echo invalid option;;
-    esac
-done
+  pfmode="STANDALONE"
+  pfmodetxt="Standalone"
+  pfmodetxt2="Standalone mode"
+  pfmodetxt3="This will be your only PingFederate node that will operate independently."
+# echo "Please choose which mode you'd like PingFederate to operate in."
+# PS3='Please enter your choice: '
+# options=("Standalone" "Clustered Admin Node" "Clustered Runtime Node" "Quit Installer")
+# select opt in "${options[@]}"
+# do
+#     case $opt in
+#         "Standalone")
+# 	    pfmode="STANDALONE"
+# 	    pfmodetxt="Standalone"
+# 	    pfmodetxt2="Standalone mode"
+# 	    pfmodetxt3="This will be your only PingFederate node that will operate independently."
+# 	    break
+#             ;;
+#         "Clustered Admin Node")
+#             pfmode="CLUSTERED_CONSOLE"
+# 	    pfmodetxt="Clustered Admin Node"
+# 	    pfmodetxt2="Clustered Admin mode"
+# 	    pfmodetxt3="This will be one of several nodes in a cluster that will host the admin console. Only one node in the cluster can operate the admin console."
+#             break
+#             ;;
+#         "Clustered Runtime Node")
+#             pfmode="CLUSTERED_ENGINE"
+# 	    pfmodetxt="Clustered Runtime Node"
+# 	    pfmodetxt2="Clustered Runtime mode"
+# 	    pfmodetxt3="This will be one of several nodes in a cluster that will not host the admin console."
+#             break
+#             ;;
+#         "Quit Installer")
+#             exit 0
+#             ;;
+#         *) echo invalid option;;
+#     esac
+# done
 
 echo " "
 echo "You've selected ${pfmodetxt2}."
 echo $pfmodetxt3
-read -e -p "Would you like to continue? (y/n) " -i "y" confirmation
-if [[ $confirmation =~ ^[Nn]$ ]]; then
-  mode_selection
-fi
+# read -e -p "Would you like to continue? (y/n) " -i "y" confirmation
+# if [[ $confirmation =~ ^[Nn]$ ]]; then
+#   mode_selection
+# fi
 }
 
 #Functions
@@ -240,10 +244,6 @@ read -e -p "Enter Port (or ?): " -i "$2" "$1"
     test_port ${3} ${!1}
     if [ $? -eq 0 ]; then
       echo "The port ${!1} is not available on the interface ${3}. Please select an available port."
-      read -e -p "Would you like to continue? (y/n) " -i "y" confirmation
-  	  if [[ ! $confirmation =~ ^[Yy]$ ]]; then
-  	    get_port $1 $2 $3
-  	  fi
     fi
   fi
 }
@@ -473,16 +473,10 @@ fi
 function download_pf()
 {
 if [ ! -f "${TMP_DIR}pingfederate-${PFVERSION}.tar.gz" ]; then
-  read -e -p "Could not locate pingfederate-${PFVERSION}.tar.gz, would you like to download it? (y/n) " -i "y" download
-  if [[ $download =~ ^[Yy]$ ]]; then
-    echo "# Downloading pingfederate-$PFVERSION.tar.gz"
-    curl -f -o "${TMP_DIR}pingfederate-$PFVERSION.tar.gz" ${BASE_DL_URL}${PFVERSION}/pingfederate-${PFVERSION}.tar.gz || echo Download failed exiting, please retry or manually download pingfederate-${PFVERSION}.tar.gz and place it in the same directory as the pf-install.sh
-    if [ ! -f ${TMP_DIR}pingfederate-$PFVERSION.tar.gz ]; then
-    exit 1
-    fi
-  else
-    echo "The installation can't be completed without downloading PingFederate. Please manually download pingfederate-${PFVERSION}.tar.gz and place it in the same directory as pf-install.sh"
-    exit 1
+  echo "# Downloading pingfederate-$PFVERSION.tar.gz"
+  curl -f -o "${TMP_DIR}pingfederate-$PFVERSION.tar.gz" ${BASE_DL_URL}${PFVERSION}/pingfederate-${PFVERSION}.tar.gz || echo Download failed exiting, please retry or manually download pingfederate-${PFVERSION}.tar.gz and place it in the same directory as the pf-install.sh
+  if [ ! -f ${TMP_DIR}pingfederate-$PFVERSION.tar.gz ]; then
+  exit 1
   fi
 fi
 }
@@ -547,86 +541,22 @@ download_pf
 
 mode_selection
 
-if [[ $pfmode = CLUSTERED_CONSOLE || $pfmode = CLUSTERED_ENGINE ]]; then
-    echo " "
-    pf_cluster_bind_address_help="Defines the IP address of the network interface to which the group communication should bind. For machines with more than one network interface, you can use this property to increase performance (particularly with UDP) as well as improve security by segmenting group-communication traffic onto a private network or VLAN. If left blank, one of the available non-loopback IP addresses will be used."
-    echo "Enter the IP address where any cluster communication should bind. If left blank, one of the available non-loopback IP addresses will be used."
-    get_address pf_cluster_bind_address ""
 
-    pf_cluster_bind_port_help=${no_help_msg}
-    echo " "
-    echo "Enter the port for the binding address above"
-    if [ -n "$pf_cluster_bind_address" ]; then
-        get_port_no_neg1 pf_cluster_bind_port 7600 ${pf_cluster_bind_address}
-        addChosenPort ${pf_cluster_bind_address} ${pf_cluster_bind_port}
-    else
-        get_port_no_neg1 pf_cluster_bind_port 7600 "0.0.0.0"
-        addChosenPort "0.0.0.0" ${pf_cluster_bind_port}
-    fi
-
-    pf_cluster_failure_detection_bind_port_help="Indicates the bind port of a server socket that is opened on the given node and used by other nodes as part of one of the cluster’s failure-detection mechanisms. If zero or unspecified, a random available port is used."
-    echo " "
-    echo "Enter the port that will be used in case of cluster failure."
-    if [ -n "$pf_cluster_bind_address" ]; then
-        get_port_and_zero pf_cluster_failure_detection_bind_port 7700 ${pf_cluster_bind_address}
-        addChosenPort ${pf_cluster_bind_address} ${pf_cluster_failure_detection_bind_port}
-    else
-        get_port_and_zero pf_cluster_failure_detection_bind_port 7700 "0.0.0.0"
-        addChosenPort "0.0.0.0" ${pf_cluster_failure_detection_bind_port}
-    fi
-
-    pf_cluster_node_index_help="Each server in a cluster must have a unique index number, which is used to identify peers and optimize inter-node communication. (Range: 0-65535)"
-    get_node_index
-
-    echo " "
-    echo "Important: The following settings need to be the same for all nodes in the cluster."
-    read -e -p "Do you want inter-node traffic to be encrypted? (y/n): " -i "n" pf_cluster_encrypt
-    if [[ $pf_cluster_encrypt =~ ^[Yy]$ ]]; then
-        pf_cluster_encrypt="true"
-        pf_cluster_auth_pwd2="nullset"
-        cluster_auth_pwd_set=false
-        while [[ "$cluster_auth_pwd_set" != true ]]; do
-            echo "Set the key that will be used for all nodes in the cluster and any nodes joining the cluster. A strong, randomly-generated key (22 or more alphanumerics) is recommended."
-            read -e -s -p "Enter the key:  " -i "" pf_cluster_auth_pwd
-            echo " "
-            read -e -s -p "Confirm key:  " -i "" pf_cluster_auth_pwd2
-            echo " "
-            if [[ "$pf_cluster_auth_pwd" != "$pf_cluster_auth_pwd2" ]]; then
-            echo "Keys do not match"
-            elif [[ -z "$pf_cluster_auth_pwd" ]]; then
-            echo "Key cannot be empty"
-            else
-            cluster_auth_pwd_set=true
-            fi
-        done
-    else
-        pf_cluster_encrypt="false"
-    fi
-
-    echo " "
-    echo "Enter the initial hosts to be contacted for joining the cluster. Enter the IP and port for each host, separated by commas."
-    pf_cluster_tcp_discovery_initial_hosts_help="Designates the initial hosts to be contacted for group membership information when discovering and joining the group. The value is a comma-separated list of host names (or IPs) and ports. Example: host1[7600],10.0.1.4[7600],host7[1033],10.0.9.45[2231]
-
-    Discovering and managing group membership is more difficult using TCP, which does not provide the built-in group semantics of IP multicast. Therefore, at least one of the members of the group must be known in advance and statically configured on each node. It is recommended that as many hosts as possible be included for this property on each cluster node, to increase the likelihood of new members finding and joining the group.
-
-    For dynamic clusters using TCP as the transport protocol, alternate discovery mechanisms are available. See server/default/conf/tcp.xml for further details. If a dynamic discovery mechanism is used, this property is ignored."
-    get_hosts pf_cluster_tcp_discovery_initial_hosts ""
-
-fi
 
 if [[ $pfmode = CLUSTERED_CONSOLE || $pfmode = STANDALONE ]]; then
     echo " "
     pf_console_bind_address_help='This property defines the IP address over which the PingFederate administrative console communicates. Use for deployments where multiple network interfaces are installed on the machine running PingFederate.'
     echo "Enter the IP address where the console communication should bind."
-    get_address_and_0000 pf_console_bind_address "0.0.0.0"
+    pf_console_bind_address="0.0.0.0"
 fi
 
 if [[ $pfmode = STANDALONE || $pfmode = CLUSTERED_CONSOLE ]]; then
     echo " "
     pf_admin_https_port_help="This property defines the port on which the PingFederate administrative console and API run."
     echo "Enter the port where the PingFederate admin console and API will run."
-    get_port pf_admin_https_port 9999 ${pf_console_bind_address}
-    addChosenPort ${pf_console_bind_address} ${pf_admin_https_port}
+    # get_port pf_admin_https_port 9999 ${pf_console_bind_address}
+    pf_admin_https_port=9999
+    addChosenPort "0.0.0.0" 9999
 fi
 
 if [[ $pfmode = STANDALONE || $pfmode = CLUSTERED_ENGINE ]]; then
@@ -638,31 +568,32 @@ if [[ $pfmode = STANDALONE || $pfmode = CLUSTERED_ENGINE ]]; then
     echo " "
 
     echo "Enter the port where PingFederate will listen for encrypted HTTPS (SSL/TLS) traffic."
-    get_port pf_https_port 9031 "0.0.0.0"
-    addChosenPort "0.0.0.0" ${pf_https_port}
+    # get_port pf_https_port 9031 "0.0.0.0"
+    pf_https_port=9031
+    addChosenPort "0.0.0.0" 9031
 
     pf_secondary_https_port="-1"
     enable_help='This property defines a secondary HTTPS port that can be used, for example, with SOAP or artifact SAML bindings or for WS-Trust STS calls. To use this port, change the placeholder value to the port number you want to use.
 
     Important: If you are using mutual SSL/TLS for either WS-Trust STS authentication or for SAML back-channel authentication, you must use this port for security reasons (or use a similarly configured new listener, with either "WantClientAuth" or "NeedClientAuth" set to "true".'
-    echo " "
-    read -e -p "Do you want to enable a secondary HTTPS port for additional security measures? (y/n/?) " -i "n" enable
-      while [[ $enable = *\?* || $enable = *help* ]]; do
-        help=enable_help
-        echo " "
-        echo "${!help}"
-        echo " "
-        read -e -p "Do you want to enable a secondary HTTPS port for additional security measures? (y/n/?) " -i "n" enable
-      done
-      if [[ $enable = y ]]; then
-          pf_secondary_https_port_help='This property defines a secondary HTTPS port that can be used, for example, with SOAP or artifact SAML bindings or for WS-Trust STS calls. To use this port, change the placeholder value to the port number you want to use.
+    # echo " "
+    # read -e -p "Do you want to enable a secondary HTTPS port for additional security measures? (y/n/?) " -i "n" enable
+    #   while [[ $enable = *\?* || $enable = *help* ]]; do
+    #     help=enable_help
+    #     echo " "
+    #     echo "${!help}"
+    #     echo " "
+    #     read -e -p "Do you want to enable a secondary HTTPS port for additional security measures? (y/n/?) " -i "n" enable
+    #   done
+    #   if [[ $enable = y ]]; then
+    #       pf_secondary_https_port_help='This property defines a secondary HTTPS port that can be used, for example, with SOAP or artifact SAML bindings or for WS-Trust STS calls. To use this port, change the placeholder value to the port number you want to use.
 
-          Important: If you are using mutual SSL/TLS for either WS-Trust STS authentication or for SAML back-channel authentication, you must use this port for security reasons (or use a similarly configured new listener, with either "WantClientAuth" or "NeedClientAuth" set to "true".
+    #       Important: If you are using mutual SSL/TLS for either WS-Trust STS authentication or for SAML back-channel authentication, you must use this port for security reasons (or use a similarly configured new listener, with either "WantClientAuth" or "NeedClientAuth" set to "true".
 
-          '
-          get_port pf_secondary_https_port 8888 "0.0.0.0"
-          addChosenPort "0.0.0.0" ${pf_secondary_https_port}
-      fi
+    #       '
+    #       get_port pf_secondary_https_port 8888 "0.0.0.0"
+    #       addChosenPort "0.0.0.0" ${pf_secondary_https_port}
+    #   fi
 fi
 
 COUNTER=1
@@ -673,9 +604,9 @@ while [  $COUNTER -lt 100 ]; do
       break
   fi
 
-  read -e -p "/usr/local/pingfederate-$COUNTER already exists, would you like to create another instance? (y/n) " -i "y" instance
+  instance="y"
     if [[ $instance =~ ^[Nn]$ ]]; then
-        read -e -p "You are about to overwrite the contents in /usr/local/pingfederate-$COUNTER, are you sure? (y/n) " -i "y" overwrite
+        overwrite="y"
         if [[ $overwrite =~ ^[Yy]$ ]]; then
             echo " "
             /etc/init.d/pingfederate-$COUNTER stop > /dev/null 2>&1
@@ -757,13 +688,13 @@ run_memory_options_if_necessary /usr/local/pingfederate-$COUNTER/ $run_script
 copy_java_home_from_temp_location
 
 # install as service
-service_tool "/usr/local/pingfederate-${COUNTER}/tools" install \
-                                                    -name pingfederate-${COUNTER} \
-                                                    -home /usr/local/pingfederate-${COUNTER} \
-                                                    -start "yes" \
-                                                    -log pf-service-install.log \
-                                                    -backup pf-service-backup \
-|| die "The service installation was not successful. See 'pf-service-install.log' for details."
+# service_tool "/usr/local/pingfederate-${COUNTER}/tools" install \
+#                                                     -name pingfederate-${COUNTER} \
+#                                                     -home /usr/local/pingfederate-${COUNTER} \
+#                                                     -start "yes" \
+#                                                     -log pf-service-install.log \
+#                                                     -backup pf-service-backup \
+# || die "The service installation was not successful. See 'pf-service-install.log' for details."
 
 if [[ $pfmode = CLUSTERED_CONSOLE || $pfmode = STANDALONE ]]; then
   echo " "
@@ -1149,14 +1080,14 @@ function get_user_group()
 
 function print_usage()
 {
-echo 'Usage: pf-install.sh [-u] [-c] [-f <path>] [-o <path>] [-t <path>] [-h]
+echo "Usage: pf-install-${PFVERSION}.sh [-u] [-c] [-f <path>] [-o <path>] [-t <path>] [-h]
     -u  Indicate that you would like to upgrade PingFederate on this machine.
     -c  Used with -u to run the upgrade in custom mode.
     -f  Used with -u to indicate the path to PingFederate that should be upgraded.
     -o  Used with -f to specify the path where the upgraded PingFederate should be located.
     -t  Specify a temporary directory for this script to use. (Default: /tmp/ping-tmp/)
     -h  Print this usage message and exit.
-'
+"
 }
 
 ########################################################################################################################
@@ -1254,7 +1185,7 @@ if [[ $TMP_DIR = *[[:space:]]* ]]; then
     exit 1
 fi
 
-prereq tar
+# prereq tar
 prereq sed
 prereq curl
 prereq awk
@@ -1274,10 +1205,6 @@ echo " "
 echo 'Welcome to PingFederate. Follow these step-by-step instructions to complete your installation.'
 echo 'Some steps have more information available, which you can access by typing "?" or "help"'
 echo " "
-
-# JAVA Versions
-LOWEST_MAJOR_VERSION_SUPPORT="8"
-HIGHEST_MAJOR_VERSION_SUPPORT="8"
 
 # Detect Operating System Distro
 OS=`lowercase \`uname\``
@@ -1371,7 +1298,6 @@ if [ "${LOCAL_USER_JAVA_HOME}" != "${ORIGINAL_PF_JAVA_HOME}" ]; then
    fi
 fi
 
-
 # Check for JAVA
 if [ -z $JAVA_HOME ]; then
   read -e -p "JAVA_HOME not set, do you want to set it? (y/n) " -i "y" confirmation
@@ -1390,35 +1316,37 @@ else
     exit 1
 fi
 
-if [[ "$_java" ]]; then
-    version=$("$_java" -version 2>&1 | awk -F '"' '/version/ {print $2}')
-    version2=${version/_/.}
-    version3=$("$_java" -version 2>&1 | awk "NR==2"|grep -i openjdk)
-    version4=$(echo "$version" | awk '{print substr($0,3,2)}')
-    version5=${version4/./}
-    echo Version "$version"
-fi
+JAVA_VERSION_STRING=`"$_java" -version 2>&1 | head -1 | cut -d '"' -f2`
+javaSupportedVersion=0
+javaIsJava8=0
 
+case "$JAVA_VERSION_STRING" in
+    1.8*)            # Java 8
+        javaSupportedVersion=1
+        javaIsJava8=1
+        ;;
+    1.*)             # Earlier than Java 8 not supported
+        ;;
+    9|9.*|10|10.*)   # Pre-LTS Java 9 and 10 not supported
+        ;;
+    *)               # Java 11 or later
+        javaSupportedVersion=1
+        ;;
+esac
 
-if [[ "$version5" < "$LOWEST_MAJOR_VERSION_SUPPORT" ]]; then
-  if [[ "$LOWEST_MAJOR_VERSION_SUPPORT" = "$HIGHEST_MAJOR_VERSION_SUPPORT" ]]; then
-     echo Java version is less than $LOWEST_MAJOR_VERSION_SUPPORT please install Java $LOWEST_MAJOR_VERSION_SUPPORT.
-  else
-     echo Java version is less than $LOWEST_MAJOR_VERSION_SUPPORT please install Java $LOWEST_MAJOR_VERSION_SUPPORT through Java $HIGHEST_MAJOR_VERSION_SUPPORT
-  fi
-  exit 1
-fi
+if [[ $javaSupportedVersion == 0 ]]; then
+        echo ""
+        echo "!! WARNING !!"
+        echo "Java version ${JAVA_VERSION_STRING} is not supported for running PingFederate. Please install Java 8 or 11."
+        echo ""
 
-if [[ "$version5" > "$HIGHEST_MAJOR_VERSION_SUPPORT" ]]; then
-  read -e -p "Java version is greater than Java $HIGHEST_MAJOR_VERSION_SUPPORT, do you want to continue with an unqualified version? (y/n) " -i "y" confirmation
-    if [[ $confirmation =~ ^[Nn]$ ]]; then
-      if [[ "$LOWEST_MAJOR_VERSION_SUPPORT" = "$HIGHEST_MAJOR_VERSION_SUPPORT" ]]; then
-         echo Please install Java $LOWEST_MAJOR_VERSION_SUPPORT
-      else
-         echo Please install Java $LOWEST_MAJOR_VERSION_SUPPORT through Java $HIGHEST_MAJOR_VERSION_SUPPORT
-      fi
-      exit 1
-    fi
+        confirm "Do you want to continue with installation?" \
+		"Enter 'y' to continue, despite potential problems."
+        if [[ ! ${USER_CONFIRMED} ]]; then
+       		 die "Installation aborted."
+        fi
+else
+        echo "Version ${JAVA_VERSION_STRING}"
 fi
 
 echo " "

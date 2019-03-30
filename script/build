@@ -1,0 +1,8 @@
+#!/bin/bash
+
+HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+cd $HERE/..
+
+docker build -f Dockerfile -t ping-build .
+docker tag ping-build ping

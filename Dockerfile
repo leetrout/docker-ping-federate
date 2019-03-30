@@ -1,15 +1,16 @@
-FROM ubuntu
+FROM centos:7
 
 WORKDIR /
 
-RUN apt-get update
-RUN apt-get install -y curl
-RUN apt-get install -y netcat
+RUN yum update -y
+RUN yum install -y java-1.8.0-openjdk-devel
+RUN yum install -y which nc
 
-RUN apt-get install -y openjdk-8-jdk 
+ENV JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.201.b09-2.el7_6.x86_64
 
-ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+COPY pf-install.sh .
+RUN chmod +x pf-install.sh
+RUN ./pf-install.sh
 
-COPY pf-install-9.1.3.sh .
-COPY pingfederate-9.1.3.tar.gz .
-RUN ./pf-install-9.1.3.sh
+COPY run.properties /usr/local/pingfederate-1/bin/
+CMD /usr/local/pingfederate-1/bin/run.sh

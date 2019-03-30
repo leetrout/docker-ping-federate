@@ -1,4 +1,0 @@
-FROM ping
-
-# docker run -p 9999:9999 -p 9031:9031 -p 1099:1099 --rm -it ping-run /usr/local/pingfederate-1/bin/run.sh
-CMD /usr/local/pingfederate-1/bin/run.sh

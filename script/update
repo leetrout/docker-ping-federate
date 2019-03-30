@@ -1,0 +1,4 @@
+#!/bin/bash
+
+CONTAINER=$(docker ps --filter ancestor=ping -q)
+docker commit $CONTAINER ping
